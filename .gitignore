@@ -1,0 +1,76 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+pip-wheel-metadata/
+*.manifest
+*.spec
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Django
+staticfiles/
+media/
+*.sqlite3
+db.sqlite3
+local_settings.py
+
+# Migrations
+apps/*/migrations/*.py
+apps/*/migrations
+# !apps/*/migrations/__init__.py
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+config.ini
+
+# Logs
+logs/
+*.log
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Type checkers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.ruff_cache/
+
+# IDEs & editors
+.idea/
+.vscode/
+.fleet/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Misc
+.junie/
