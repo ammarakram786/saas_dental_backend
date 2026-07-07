@@ -1,7 +1,9 @@
 """DRY base viewsets enforcing tenant isolation and platform gating."""
 from __future__ import annotations
 
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 
 from apps.common.permissions import (
@@ -22,6 +24,7 @@ class BaseTenantViewSet(viewsets.ModelViewSet):
     role permission codename; otherwise active membership is sufficient.
     """
 
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     permission_classes = [IsAuthenticated, IsTenantMember, HasTenantPermission]
     required_tenant_permission: str | None = None
 
@@ -46,5 +49,6 @@ class BasePlatformViewSet(viewsets.ModelViewSet):
     the user's platform role.
     """
 
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     permission_classes = [IsAuthenticated, HasPlatformModuleAccess]
     required_module_codename: str | None = None

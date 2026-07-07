@@ -35,10 +35,16 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "django_filters",
     "drf_spectacular",
+    "django_celery_beat",
     "apps.common",
     "apps.platform",
     "apps.tenants",
     "apps.accounts",
+    "apps.appointments",
+    "apps.patients",
+    "apps.clinical",
+    "apps.billing",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [
@@ -90,13 +96,28 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Karachi"
 USE_I18N = True
 USE_TZ = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REDIS_URL = env("REDIS_URL", default="redis://127.0.0.1:6379/0")
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=REDIS_URL)
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=REDIS_URL)
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_BEAT_SCHEDULE = {
+    "lock-stale-clinical-notes": {
+        "task": "apps.clinical.tasks.lock_stale_notes",
+        "schedule": 60 * 60,
+    },
+    "send-appointment-reminders": {
+        "task": "apps.notifications.tasks.send_due_appointment_reminders",
+        "schedule": 15 * 60,
+    },
+}
 
 CACHES = {
     "default": {
