@@ -1,9 +1,20 @@
 """Tenant lifecycle services."""
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+from django.contrib.auth import get_user_model
 from django.db import transaction
 
-from apps.tenants.models import Tenant, TenantPermission, TenantRole
+from apps.tenants.models import Tenant, TenantMembership, TenantPermission, TenantRole
+
+User = get_user_model()
+
+
+class TenantProvisioningError(Exception):
+    def __init__(self, detail: dict):
+        self.detail = detail
+        super().__init__(detail)
 
 # Default role -> permission-codename mapping. ``None`` means "all permissions".
 DEFAULT_ROLE_DEFINITIONS: dict[str, dict] = {
@@ -64,3 +75,73 @@ def seed_default_roles(tenant: Tenant) -> list[TenantRole]:
         created_roles.append(role)
 
     return created_roles
+
+
+@dataclass(frozen=True)
+class TenantProvisioningResult:
+    tenant: Tenant
+    admin_user: User
+    membership: TenantMembership
+    created_user: bool
+
+
+def _username_from_email(email: str) -> str:
+    base = (email.split("@", 1)[0] or "user")[:150]
+    candidate = base
+    suffix = 1
+    while User.objects.filter(username=candidate).exists():
+        candidate = f"{base}{suffix}"[:150]
+        suffix += 1
+    return candidate
+
+
+@transaction.atomic
+def provision_tenant_with_admin(
+    *,
+    name: str,
+    slug: str,
+    is_active: bool = True,
+    admin_email: str,
+    admin_first_name: str = "",
+    admin_last_name: str = "",
+    admin_password: str | None = None,
+) -> TenantProvisioningResult:
+    """Create a tenant and assign an administrator membership in one transaction."""
+    tenant = Tenant.objects.create(name=name, slug=slug, is_active=is_active)
+    admin_role = TenantRole.objects.get(tenant=tenant, slug="admin")
+
+    normalized_email = admin_email.strip().lower()
+    user = User.objects.filter(email__iexact=normalized_email).first()
+    created_user = False
+
+    if user is None:
+        if not admin_password:
+            raise TenantProvisioningError(
+                {"admin_user": {"password": ["Password is required for a new user."]}}
+            )
+        user = User.objects.create_user(
+            username=_username_from_email(normalized_email),
+            email=normalized_email,
+            password=admin_password,
+            first_name=admin_first_name.strip(),
+            last_name=admin_last_name.strip(),
+        )
+        created_user = True
+    elif TenantMembership.objects.filter(user=user, tenant=tenant).exists():
+        raise TenantProvisioningError(
+            {"admin_user": {"email": ["User is already a member of this tenant."]}}
+        )
+
+    membership = TenantMembership.objects.create(
+        user=user,
+        tenant=tenant,
+        role=admin_role,
+        is_active=True,
+    )
+
+    return TenantProvisioningResult(
+        tenant=tenant,
+        admin_user=user,
+        membership=membership,
+        created_user=created_user,
+    )

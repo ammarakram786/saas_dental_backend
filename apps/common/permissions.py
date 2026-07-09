@@ -4,18 +4,25 @@ Two planes are enforced here:
 - Platform (control plane) via :class:`HasPlatformModuleAccess`.
 - Tenant (data plane) via :class:`IsTenantMember` / :class:`HasTenantPermission`.
 
-A ``is_super_admin`` user bypasses every check.
+A platform super admin bypasses every check via :class:`AuthContext`.
 """
 from __future__ import annotations
 
 from rest_framework.permissions import BasePermission
 
 
-def _authenticated_user(request):
+def _auth_context(request):
     user = getattr(request, "user", None)
     if user is None or not user.is_authenticated:
         return None
-    return user
+
+    ctx = getattr(request, "auth_context", None)
+    if ctx is None:
+        from apps.accounts.services import resolve_auth_context
+
+        ctx = resolve_auth_context(user, getattr(request, "tenant", None))
+        request.auth_context = ctx
+    return ctx
 
 
 class HasPlatformModuleAccess(BasePermission):
@@ -24,16 +31,14 @@ class HasPlatformModuleAccess(BasePermission):
     message = "You do not have access to this platform module."
 
     def has_permission(self, request, view) -> bool:
-        user = _authenticated_user(request)
-        if user is None:
+        ctx = _auth_context(request)
+        if ctx is None:
             return False
-        if getattr(user, "is_super_admin", False):
-            return True
 
         codename = getattr(view, "required_module_codename", None)
         if not codename:
             return False
-        return user.has_platform_module(codename)
+        return ctx.has_platform_module(codename)
 
 
 class IsTenantMember(BasePermission):
@@ -42,16 +47,14 @@ class IsTenantMember(BasePermission):
     message = "You are not a member of this tenant."
 
     def has_permission(self, request, view) -> bool:
-        user = _authenticated_user(request)
-        if user is None:
+        ctx = _auth_context(request)
+        if ctx is None:
             return False
 
         tenant = getattr(request, "tenant", None)
         if tenant is None:
             return False
-        if getattr(user, "is_super_admin", False):
-            return True
-        return user.is_tenant_member(tenant)
+        return ctx.is_tenant_member()
 
 
 class HasTenantPermission(BasePermission):
@@ -63,17 +66,15 @@ class HasTenantPermission(BasePermission):
     message = "Your tenant role does not grant this permission."
 
     def has_permission(self, request, view) -> bool:
-        user = _authenticated_user(request)
-        if user is None:
+        ctx = _auth_context(request)
+        if ctx is None:
             return False
 
         tenant = getattr(request, "tenant", None)
         if tenant is None:
             return False
-        if getattr(user, "is_super_admin", False):
-            return True
 
         codename = getattr(view, "required_tenant_permission", None)
         if not codename:
-            return user.is_tenant_member(tenant)
-        return user.has_tenant_permission(tenant, codename)
+            return ctx.is_tenant_member()
+        return ctx.has_tenant_permission(codename)

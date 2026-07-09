@@ -11,7 +11,8 @@ class MePermissionsView(APIView):
         if tenant is None:
             return Response({"tenant": None, "permissions": []})
 
-        role = request.user.tenant_role(tenant)
+        ctx = getattr(request, "auth_context", None)
+        role = ctx.tenant_membership.role if ctx and ctx.tenant_membership else None
         permissions = sorted(role.permission_codenames()) if role else []
         return Response(
             {

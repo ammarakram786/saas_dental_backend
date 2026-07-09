@@ -106,7 +106,9 @@ class HasTenantPermissionViewSetTests(TestCase):
         self.assertEqual(self._get(user, self.tenant).status_code, 200)
 
     def test_super_admin_allowed_without_membership(self):
-        user = User.objects.create_user(
-            username="root", password="x", is_super_admin=True
+        user = User.objects.create_superuser(
+            username="root",
+            password="x",
+            email="root@test.com",
         )
         self.assertEqual(self._get(user, self.tenant).status_code, 200)

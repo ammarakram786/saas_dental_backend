@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps import appointments, accounts
 from apps.common.fields import EncryptedTextField
 from apps.common.models import TimeStampedModel
 from apps.tenants.models import TenantResource

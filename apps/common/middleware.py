@@ -90,3 +90,40 @@ class TenantResolutionMiddleware:
         if tenant is not None:
             cache_tenant(tenant)
         return tenant
+
+
+class AuthContextMiddleware:
+    """Attach resolved actor authorization context to each authenticated request."""
+
+    async_capable = True
+    sync_capable = True
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self._is_async = iscoroutinefunction(get_response)
+        if self._is_async:
+            markcoroutinefunction(self)
+
+    def __call__(self, request):
+        if self._is_async:
+            return self.__acall__(request)
+        self._attach_auth_context(request)
+        return self.get_response(request)
+
+    async def __acall__(self, request):
+        await sync_to_async(self._attach_auth_context)(request)
+        return await self.get_response(request)
+
+    @staticmethod
+    def _attach_auth_context(request) -> None:
+        from apps.accounts.services import resolve_auth_context
+
+        user = getattr(request, "user", None)
+        if user is None or not user.is_authenticated:
+            request.auth_context = None
+            return
+
+        request.auth_context = resolve_auth_context(
+            user,
+            getattr(request, "tenant", None),
+        )

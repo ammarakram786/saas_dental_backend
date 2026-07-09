@@ -10,4 +10,4 @@ class UserFilter(django_filters.FilterSet):
 
     class Meta:
         model = User
-        fields = ["is_active", "is_super_admin", "platform_role"]
+        fields = ["is_active", "is_staff", "is_superuser"]
