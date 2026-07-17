@@ -18,3 +18,4 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "status",
             "created_at",
         )
+        read_only_fields = ("tenant", "created_at")

@@ -15,3 +15,4 @@ class AppointmentSlotSerializer(serializers.ModelSerializer):
             "end_time",
             "is_available",
         )
+        read_only_fields = ("tenant",)

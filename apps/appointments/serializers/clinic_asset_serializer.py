@@ -7,3 +7,4 @@ class ClinicAssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClinicAsset
         fields = ("id", "tenant", "name", "asset_type", "is_operational")
+        read_only_fields = ("tenant",)

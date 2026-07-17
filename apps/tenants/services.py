@@ -30,6 +30,9 @@ DEFAULT_ROLE_DEFINITIONS: dict[str, dict] = {
             "manage_members",
             "manage_appointments",
             "view_reports",
+            "edit_clinical_chart",
+            "manage_treatment_plans",
+            "manage_billing",
         },
     },
     "member": {

@@ -150,9 +150,13 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "MedSaaS API",
+    "DESCRIPTION": "Multi-tenant dental clinic management API (Dental Doodle / MedSaaS).",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+# OpenAPI UI is enabled when DEBUG or ENABLE_API_DOCS is true.
+ENABLE_API_DOCS = env.bool("ENABLE_API_DOCS", default=DEBUG)
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),

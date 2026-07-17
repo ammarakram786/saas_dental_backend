@@ -16,3 +16,4 @@ class PaymentRecordSerializer(serializers.ModelSerializer):
             "gateway_status",
             "created_at",
         )
+        read_only_fields = ("tenant", "created_at")
