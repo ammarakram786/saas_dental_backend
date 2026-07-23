@@ -83,7 +83,7 @@ ASGI_APPLICATION = "config.asgi.application"
 DATABASES = {
     "default": env.db(
         "DATABASE_URL",
-        default="postgres://postgres:postgres@localhost:5432/med_saas",
+        default="postgres://postgres:postgres@172.21.16.1:5432/dental_saas", 
     )
 }
 
